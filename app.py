@@ -2,8 +2,8 @@ import streamlit as st
 
 st.set_page_config(page_title="Used Car Valuation AI", page_icon="🚗", layout="centered")
 
-st.title("🚗 Second-Hand Car Value Evaluator")
-st.caption("CBSE Class 12 AI Capstone Project — UN SDG Goal 8: Decent Work & Economic Growth")
+st.title("Second-Hand Car Value Evaluator")
+st.caption("")
 st.divider()
 
 col1, col2 = st.columns(2)
