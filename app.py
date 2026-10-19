@@ -6,16 +6,18 @@ st.set_page_config(page_title="Used Car Valuation AI", page_icon="🚗")
 
 st.title("🚗 Second-Hand Car Value Evaluator")
 st.caption(
-    "CBSE Class 12 AI Capstone Project — UN SDG Goal 8: Decent Work & Economic Growth"
+    "CBSE Class 12 AI Capstone Project — UN SDG Goal 8: Decent Work & Economic"
+    " Growth"
 )
 
 
-# Train Decision Tree model directly on startup using the dataset
+# Train Decision Tree model directly on startup
 @st.cache_resource
 def get_trained_model():
   df = pd.read_csv("car_data.csv")
   df.columns = df.columns.str.strip()
 
+  # Exact casing from your Orange Select Columns widget
   features = [
       "Year",
       "Present_Price",
@@ -37,7 +39,6 @@ def get_trained_model():
   )
   feature_cols = list(X.columns)
 
-  # Using DecisionTreeRegressor (Matches your Orange Tree widget)
   model = DecisionTreeRegressor(random_state=42)
   model.fit(X, y)
   return model, feature_cols
@@ -46,26 +47,24 @@ def get_trained_model():
 try:
   model, feature_cols = get_trained_model()
 except Exception as e:
-  st.error(
-      f"Error loading 'car_data.csv'. Ensure car_data.csv is uploaded in your GitHub repo! Details: {e}"
-  )
+  st.error(f"Error loading model/dataset: {e}")
   st.stop()
 
-# Inputs
+# Inputs matching Orange columns
 col1, col2 = st.columns(2)
 
 with col1:
-  year = st.number_input("Year of Purchase", 2005, 2026, 2017)
+  year = st.number_input("Year", 2005, 2026, 2017)
   present_price = st.number_input(
-      "Original Showroom Price (₹ Lakhs)", 0.5, 50.0, 8.5, 0.25
+      "Present_Price (₹ Lakhs)", 0.5, 50.0, 8.5, 0.25
   )
-  kms_driven = st.number_input("Kilometers Driven", 500, 250000, 35000, 1000)
+  kms_driven = st.number_input("Kms_Driven", 500, 250000, 35000, 1000)
 
 with col2:
-  fuel_type = st.selectbox("Fuel Type", ["Petrol", "Diesel", "CNG"])
-  seller_type = st.selectbox("Seller Type", ["Dealer", "Individual"])
+  fuel_type = st.selectbox("Fuel_Type", ["Petrol", "Diesel", "CNG"])
+  seller_type = st.selectbox("Seller_Type", ["Dealer", "Individual"])
   transmission = st.selectbox("Transmission", ["Manual", "Automatic"])
-  owner = st.selectbox("Previous Owners", [0, 1, 2, 3])
+  owner = st.selectbox("Owner", [0, 1, 2, 3])
 
 if st.button("Evaluate Resale Value", use_container_width=True):
   row = {
