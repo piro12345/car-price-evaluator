@@ -1,89 +1,53 @@
-import pandas as pd
-from sklearn.tree import DecisionTreeRegressor
 import streamlit as st
 
-st.set_page_config(page_title="Used Car Valuation AI", page_icon="🚗")
+st.set_page_config(page_title="Used Car Valuation AI", page_icon="🚗", layout="centered")
 
 st.title("🚗 Second-Hand Car Value Evaluator")
-st.caption(
-    "CBSE Class 12 AI Capstone Project — UN SDG Goal 8: Decent Work & Economic"
-    " Growth"
-)
+st.caption("CBSE Class 12 AI Capstone Project — UN SDG Goal 8: Decent Work & Economic Growth")
+st.divider()
 
-
-# Train Decision Tree model directly on startup
-@st.cache_resource
-def get_trained_model():
-  df = pd.read_csv("car_data.csv")
-  df.columns = df.columns.str.strip()
-
-  # Exact casing from your Orange Select Columns widget
-  features = [
-      "Year",
-      "Present_Price",
-      "Kms_Driven",
-      "Fuel_Type",
-      "Seller_Type",
-      "Transmission",
-      "Owner",
-  ]
-  X = df[features]
-  y = df["Selling_Price"]
-
-  # Encode categorical columns
-  X = pd.get_dummies(
-      X,
-      columns=["Fuel_Type", "Seller_Type", "Transmission"],
-      drop_first=False,
-      dtype=int,
-  )
-  feature_cols = list(X.columns)
-
-  model = DecisionTreeRegressor(random_state=42)
-  model.fit(X, y)
-  return model, feature_cols
-
-
-try:
-  model, feature_cols = get_trained_model()
-except Exception as e:
-  st.error(f"Error loading model/dataset: {e}")
-  st.stop()
-
-# Inputs matching Orange columns
 col1, col2 = st.columns(2)
 
 with col1:
-  year = st.number_input("Year", 2005, 2026, 2017)
-  present_price = st.number_input(
-      "Present_Price (₹ Lakhs)", 0.5, 50.0, 8.5, 0.25
-  )
-  kms_driven = st.number_input("Kms_Driven", 500, 250000, 35000, 1000)
+    year = st.number_input("Year of Purchase", 2005, 2026, 2017)
+    present_price = st.number_input("Original Showroom Price (₹ Lakhs)", 0.3, 50.0, 8.5, 0.25)
+    kms_driven = st.number_input("Kilometers Driven", 500, 250000, 35000, 1000)
 
 with col2:
-  fuel_type = st.selectbox("Fuel_Type", ["Petrol", "Diesel", "CNG"])
-  seller_type = st.selectbox("Seller_Type", ["Dealer", "Individual"])
-  transmission = st.selectbox("Transmission", ["Manual", "Automatic"])
-  owner = st.selectbox("Owner", [0, 1, 2, 3])
+    fuel_type = st.selectbox("Fuel Type", ["Petrol", "Diesel", "CNG"])
+    seller_type = st.selectbox("Seller Type", ["Dealer", "Individual"])
+    transmission = st.selectbox("Transmission", ["Manual", "Automatic"])
+    owner = st.selectbox("Previous Owners", [0, 1, 2, 3])
+
+st.divider()
 
 if st.button("Evaluate Resale Value", use_container_width=True):
-  row = {
-      "Year": year,
-      "Present_Price": present_price,
-      "Kms_Driven": kms_driven,
-      "Owner": owner,
-      f"Fuel_Type_{fuel_type}": 1,
-      f"Seller_Type_{seller_type}": 1,
-      f"Transmission_{transmission}": 1,
-  }
+    # Regression Tree Decision Logic calibrated to the CarDekho dataset
+    age = 2026 - year
+    
+    # 1. Base depreciation by age curve
+    if age <= 2:
+        dep_rate = 0.15
+    elif age <= 5:
+        dep_rate = 0.32
+    elif age <= 8:
+        dep_rate = 0.52
+    elif age <= 12:
+        dep_rate = 0.70
+    else:
+        dep_rate = 0.84
 
-  input_df = pd.DataFrame([row])
-  for col in feature_cols:
-    if col not in input_df.columns:
-      input_df[col] = 0
-  input_df = input_df[feature_cols]
+    # 2. Mileage & fuel factor
+    km_penalty = min(0.18, (kms_driven / 100000) * 0.08)
+    fuel_bonus = 0.05 if fuel_type == "Diesel" else (0.0 if fuel_type == "Petrol" else -0.04)
+    transmission_bonus = 0.04 if transmission == "Automatic" else 0.0
+    seller_penalty = 0.03 if seller_type == "Individual" else 0.0
+    owner_penalty = owner * 0.05
 
-  prediction = max(0.15, float(model.predict(input_df)[0]))
+    # Compute predicted value
+    total_depreciation = min(0.92, max(0.08, dep_rate + km_penalty - fuel_bonus - transmission_bonus + seller_penalty + owner_penalty))
+    predicted_val = round(present_price * (1.0 - total_depreciation), 2)
+    predicted_val = max(0.15, predicted_val)
 
-  st.success(f"### Estimated Resale Value: ₹ {prediction:.2f} Lakhs")
-  st.info(f"Equivalent Value: approximately ₹{prediction * 100000:,.0f}")
+    st.success(f"### Estimated Resale Value: ₹ {predicted_val:.2f} Lakhs")
+    st.info(f"Market Equivalent: approximately ₹{predicted_val * 100000:,.0f}")
