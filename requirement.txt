@@ -1,5 +1,2 @@
 streamlit
-pandas
-Orange3
-scikit-learn
 
